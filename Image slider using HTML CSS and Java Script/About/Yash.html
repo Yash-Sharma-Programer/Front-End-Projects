@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About</title>
+     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='50' font-size='48'%3E%F0%9F%90%A6%3C/text%3E%3C/svg%3E" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .image {
+            background-image: url("Ast.jpg");
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+        }
+
+        header {
+            position: relative;
+            top: 280px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1;
+            font-size: 3.5rem;
+            font-weight: bolder;
+            color: #fff;
+            font-style: italic;
+            opacity: 0;
+            animation: fadeSlideIn 1.5s ease-out forwards;
+        }
+
+        .date {
+            position: relative;
+            top: 300px;
+            z-index: 1;
+            color: #fff;
+            font-style: italic;
+            font-weight: bold;
+            font-size: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            animation: fadeSlideIn 1.5s ease-out forwards;
+            animation-delay: 0.8s;
+        }
+
+        .creater {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            top: 310px;
+            z-index: 1;
+            color: #fff;
+            font-style: italic;
+            font-size: 2.5rem;
+            opacity: 0;
+            animation: fadeSlideIn 1.5s ease-out forwards;
+            animation-delay: 1.5s;
+        }
+
+        /* Keyframe animations */
+        @keyframes fadeSlideIn {
+            0% {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Optional: a subtle zoom animation for the background */
+        @keyframes slowZoom {
+            0% {
+                transform: scale(1);
+            }
+            100% {
+                transform: scale(1.05);
+            }
+        }
+
+        .image {
+            animation: slowZoom 15s ease-in-out infinite alternate;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="image">
+        <header>About</header>
+        <div class="date">
+            <h2>This website was created on 31-OCT-2025</h2>
+        </div>
+        <div class="creater">By Yash</div>
+    </div>
+</body>
+
+</html>

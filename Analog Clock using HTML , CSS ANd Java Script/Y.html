@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aesthetic Analog Clock</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --fg: #0f172a;
+      --muted: #64748b;
+      --accent: #7c3aed;
+      --accent-2: #22d3ee;
+
+      --face: #f8fafc;
+      --face-edge: #e2e8f0;
+      --rim: rgba(15, 23, 42, 0.2);
+
+      --tick: #475569;
+      --tick-hr: #0f172a;
+
+      --hand-hour: #0f172a;
+      --hand-minute: #1f2937;
+      --hand-second: #ef4444;
+
+      --shadow: 0 30px 60px rgba(2, 6, 23, 0.35);
+      --inner-shadow-1: inset 0 10px 30px rgba(255, 255, 255, 0.35);
+      --inner-shadow-2: inset 0 -18px 40px rgba(2, 6, 23, 0.25);
+
+      --edge-gap: 18px; /* space from edge for tick placement */
+    }
+
+    body.dark {
+      --fg: #e5e7eb;
+      --muted: #94a3b8;
+
+      --face: #0b1220;
+      --face-edge: #121a2a;
+      --rim: rgba(255, 255, 255, 0.06);
+
+      --tick: #cbd5e1;
+      --tick-hr: #e5e7eb;
+
+      --hand-hour: #f1f5f9;
+      --hand-minute: #cbd5e1;
+      --hand-second: #f43f5e;
+    }
+
+    /* Background */
+    body {
+      margin: 0;
+      min-height: 100svh;
+      display: grid;
+      place-items: center;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color: var(--fg);
+      background:
+        radial-gradient(1200px 1200px at 15% 10%, rgba(14, 165, 233, 0.35), transparent 50%),
+        radial-gradient(1200px 1200px at 90% 85%, rgba(167, 139, 250, 0.35), transparent 50%),
+        linear-gradient(135deg, #eef2ff, #f8fafc);
+    }
+    body.dark {
+      background:
+        radial-gradient(1200px 1200px at 20% 10%, rgba(14, 165, 233, 0.18), transparent 45%),
+        radial-gradient(1200px 1200px at 80% 90%, rgba(167, 139, 250, 0.15), transparent 45%),
+        linear-gradient(135deg, #0b1020, #030712);
+    }
+
+    .stage {
+      display: grid;
+      gap: 18px;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .clock {
+      width: min(88vmin, 440px);
+      aspect-ratio: 1 / 1;
+      filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.25));
+    }
+
+    .face {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background:
+        radial-gradient(120% 120% at 50% 35%, var(--face) 0%, var(--face) 55%, var(--face-edge) 100%);
+      box-shadow:
+        0 0 0 1px var(--rim),
+        var(--shadow),
+        var(--inner-shadow-1),
+        var(--inner-shadow-2);
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    /* Thin translucent rim glow */
+    .face::before {
+      content: "";
+      position: absolute;
+      inset: 1.2%;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 15%, rgba(255, 255, 255, 0.35), transparent 60%),
+        radial-gradient(circle at 50% 85%, rgba(0, 0, 0, 0.2), transparent 60%);
+      pointer-events: none;
+      mix-blend-mode: soft-light;
+    }
+
+    /* Subtle glass highlight */
+    .glass {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background:
+        radial-gradient(120% 80% at 50% -20%, rgba(255,255,255,0.25), transparent 60%),
+        radial-gradient(120% 80% at 50% 120%, rgba(255,255,255,0.05), transparent 60%);
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+
+    /* Ticks and numbers containers */
+    .ticks, .nums {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* Tick styles */
+    .tick {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: rotate(calc(var(--rot) * 1deg)) translateY(calc(-1 * var(--R)));
+      transform-origin: center center;
+      background: var(--tick);
+      border-radius: 2px;
+      opacity: 0.8;
+    }
+    .tick.mn {
+      width: 2px;
+      height: 12px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.05);
+    }
+    .tick.hr {
+      width: 4px;
+      height: 22px;
+      background: var(--tick-hr);
+      box-shadow: 0 0 10px rgba(0,0,0,0.07);
+    }
+
+    /* Hour numbers */
+    .num {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      font-weight: 600;
+      font-size: clamp(14px, 2.2vmin, 18px);
+      letter-spacing: 0.02em;
+      color: var(--fg);
+      transform:
+        rotate(var(--angle))
+        translateY(calc(-1 * var(--Rn)))
+        rotate(calc(-1 * var(--angle)));
+      user-select: none;
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.35),
+        0 6px 14px rgba(2, 6, 23, 0.25);
+    }
+
+    /* Hands */
+    .hand {
+      position: absolute;
+      left: 50%;
+      bottom: 50%;
+      transform-origin: bottom center;
+      transform: translateX(-50%) rotate(0deg);
+      border-radius: 999px;
+      will-change: transform;
+    }
+    .hand.hour {
+      width: 10px;
+      height: calc(50% - 88px);
+      background:
+        linear-gradient(to bottom, rgba(0,0,0,0.08), transparent 18%),
+        linear-gradient(to bottom, var(--hand-hour), var(--hand-hour));
+      box-shadow:
+        0 10px 20px rgba(2, 6, 23, 0.15),
+        inset 0 -6px 10px rgba(255,255,255,0.15);
+    }
+    .hand.minute {
+      width: 7px;
+      height: calc(50% - 58px);
+      background:
+        linear-gradient(to bottom, rgba(0,0,0,0.05), transparent 18%),
+        linear-gradient(to bottom, var(--hand-minute), var(--hand-minute));
+      box-shadow:
+        0 10px 20px rgba(2, 6, 23, 0.15),
+        inset 0 -5px 10px rgba(255,255,255,0.12);
+    }
+    .hand.second {
+      width: 3px;
+      height: calc(50% - 42px);
+      background: linear-gradient(to bottom, var(--hand-second), var(--hand-second));
+      box-shadow:
+        0 8px 16px rgba(239, 68, 68, 0.25);
+    }
+    /* Tail on second hand */
+    .hand.second::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 100%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 22px;
+      border-radius: 999px;
+      background: rgba(239, 68, 68, 0.85);
+      filter: blur(0.2px);
+      opacity: 0.9;
+    }
+
+    /* Center cap */
+    .center-cap {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 22px;
+      height: 22px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 40% 35%, rgba(255,255,255,0.7), transparent 55%),
+        radial-gradient(circle at 60% 65%, rgba(0,0,0,0.25), transparent 60%),
+        linear-gradient(180deg, #111827, #111827);
+      box-shadow:
+        0 0 0 2px rgba(255,255,255,0.6),
+        0 10px 20px rgba(0,0,0,0.35),
+        inset 0 1px 2px rgba(255,255,255,0.4),
+        inset 0 -2px 4px rgba(0,0,0,0.35);
+      z-index: 3;
+    }
+
+    /* Digital time + controls */
+    .below {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      opacity: 0.9;
+    }
+    .digital {
+      font-variant-numeric: tabular-nums;
+      font-size: 14px;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      padding: 6px 10px;
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(6px);
+    }
+    body.dark .digital {
+      background: rgba(6, 12, 24, 0.35);
+      border-color: rgba(255,255,255,0.1);
+    }
+
+    .toggle {
+      appearance: none;
+      border: 1px solid rgba(100, 116, 139, 0.25);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.35));
+      color: #0f172a;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      transition: transform 0.12s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+    .toggle:hover { transform: translateY(-1px); }
+    .toggle:active { transform: translateY(0); }
+    body.dark .toggle {
+      color: #e5e7eb;
+      background:
+        linear-gradient(180deg, rgba(30,41,59,0.65), rgba(15,23,42,0.65));
+      border-color: rgba(148, 163, 184, 0.2);
+    }
+
+    /* Respect reduced motion preference */
+    @media (prefers-reduced-motion: reduce) {
+      .hand { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage">
+    <div class="clock" aria-label="Analog clock showing current time" role="img">
+      <div class="face" id="face">
+        <div class="ticks" id="ticks"></div>
+        <div class="nums" id="nums"></div>
+
+        <div class="hand hour" id="hour"></div>
+        <div class="hand minute" id="minute"></div>
+        <div class="hand second" id="second"></div>
+
+        <div class="center-cap"></div>
+        <div class="glass"></div>
+      </div>
+    </div>
+
+    <div class="below">
+      <div class="digital" id="digital" aria-live="polite"></div>
+      <button class="toggle" id="toggle" title="Toggle theme">Toggle theme</button>
+    </div>
+  </main>
+
+  <script>
+    const face = document.getElementById('face');
+    const ticksEl = document.getElementById('ticks');
+    const numsEl = document.getElementById('nums');
+
+    const hourHand = document.getElementById('hour');
+    const minuteHand = document.getElementById('minute');
+    const secondHand = document.getElementById('second');
+    const digital = document.getElementById('digital');
+    const toggleBtn = document.getElementById('toggle');
+
+    // Generate tick marks (60) and hour numbers (12)
+    function buildDial() {
+      // Ticks
+      for (let i = 0; i < 60; i++) {
+        const t = document.createElement('span');
+        t.className = 'tick ' + (i % 5 === 0 ? 'hr' : 'mn');
+        t.style.setProperty('--rot', i * 6);
+        ticksEl.appendChild(t);
+      }
+      // Numbers
+      for (let i = 1; i <= 12; i++) {
+        const n = document.createElement('span');
+        n.className = 'num';
+        n.textContent = i;
+        n.style.setProperty('--angle', `${i * 30}deg`);
+        numsEl.appendChild(n);
+      }
+    }
+    buildDial();
+
+    // Keep ticks and numbers nicely placed regardless of size
+    function updateDialRadius() {
+      const r = face.clientWidth / 2;
+      const R_ticks = r - parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--edge-gap') || 18);
+      const R_nums = r - 42; // pull numbers slightly inward
+      face.style.setProperty('--R', `${R_ticks}px`);
+      face.style.setProperty('--Rn', `${R_nums}px`);
+    }
+    updateDialRadius();
+
+    // Observe resize to keep layout crisp
+    const ro = new ResizeObserver(updateDialRadius);
+    ro.observe(face);
+
+    // Smooth hands using requestAnimationFrame (respects reduced motion)
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function setTransforms(hDeg, mDeg, sDeg) {
+      hourHand.style.transform = `translateX(-50%) rotate(${hDeg}deg)`;
+      minuteHand.style.transform = `translateX(-50%) rotate(${mDeg}deg)`;
+      secondHand.style.transform = `translateX(-50%) rotate(${sDeg}deg)`;
+    }
+
+    let lastSecond = -1;
+    function updateDigital(now) {
+      const sec = now.getSeconds();
+      if (sec !== lastSecond) {
+        lastSecond = sec;
+        digital.textContent = now.toLocaleTimeString([], {
+          hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+      }
+    }
+
+    function tickRAF() {
+      const now = new Date();
+      const ms = now.getMilliseconds();
+      const s = now.getSeconds() + ms / 1000;
+      const m = now.getMinutes() + s / 60;
+      const h = (now.getHours() % 12) + m / 60;
+
+      const sDeg = s * 6;       // 360 / 60
+      const mDeg = m * 6;
+      const hDeg = h * 30;      // 360 / 12
+
+      setTransforms(hDeg, mDeg, sDeg);
+      updateDigital(now);
+
+      requestAnimationFrame(tickRAF);
+    }
+
+    function tickInterval() {
+      const now = new Date();
+      const s = now.getSeconds();
+      const m = now.getMinutes() + s / 60;
+      const h = (now.getHours() % 12) + m / 60;
+
+      setTransforms(h * 30, m * 6, s * 6);
+      updateDigital(now);
+    }
+
+    if (prefersReduced) {
+      tickInterval();
+      setInterval(tickInterval, 1000);
+    } else {
+      requestAnimationFrame(tickRAF);
+    }
+
+    // Theme handling: respect system and allow toggle
+    function setThemeClass(dark) {
+      document.body.classList.toggle('dark', dark);
+      localStorage.setItem('clock-theme', dark ? 'dark' : 'light');
+    }
+
+    // Init theme
+    const saved = localStorage.getItem('clock-theme');
+    if (saved) {
+      setThemeClass(saved === 'dark');
+    } else {
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setThemeClass(systemDark);
+    }
+
+    toggleBtn.addEventListener('click', () => {
+      setThemeClass(!document.body.classList.contains('dark'));
+    });
+  </script>
+</body>
+</html>

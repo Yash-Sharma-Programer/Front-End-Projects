@@ -1,0 +1,50 @@
+
+#clockContainer{
+    position: relative;
+    margin: auto;
+    height: 40vw;
+    width: 40vw;
+    background: url(clock.jpg) no-repeat center;
+    background-size: 100%;
+}
+
+/* Base hand styles */
+#hour, #minute, #second{
+    position: absolute;
+    left: 50%;
+    bottom: 50%;                  /* put the bottom of each hand at the center */
+    transform-origin: bottom center;
+    transform: translateX(-50%) rotate(0deg); /* center horizontally, rotate around base */
+    background: black;
+    border-radius: 10px;
+}
+
+
+#hour{
+    width: 1.2%;
+    height: 22%;
+    opacity: 0.9;
+}
+#minute{
+    width: 1%;
+    height: 30%;
+    opacity: 0.9;
+}
+#second{
+    width: 0.6%;
+    height: 36%;          
+    opacity: 0.9;
+}
+
+/* Optional: a center cap */
+#clockContainer::after{
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    background: #000;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
